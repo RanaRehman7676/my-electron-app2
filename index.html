@@ -1,21 +1,401 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
-    <meta
-      http-equiv="X-Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'"
-    />
-    <title>Hello from Electron renderer!</title>
-  </head>
-  <body>
-    <h1>Hello from Electron renderer!</h1>
-    <p>👋</p>
-    <p id="info"></p>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+  <title>Electron Notes App - SQLite Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      opacity: 0.9;
+      font-size: 1.1em;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      border: 2px solid #e9ecef;
+    }
+
+    .stat-card h3 {
+      color: #667eea;
+      font-size: 2em;
+      margin-bottom: 5px;
+    }
+
+    .stat-card p {
+      color: #6c757d;
+      font-size: 0.9em;
+    }
+
+    .form-section {
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    .form-section h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 6px;
+      font-size: 1em;
+      font-family: inherit;
+      transition: border-color 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-right: 10px;
+      margin-top: 10px;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #218838;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .notes-section {
+      margin-top: 30px;
+    }
+
+    .notes-section h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+    }
+
+    .search-box {
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 6px;
+      font-size: 1em;
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .note-card {
+      background: white;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .note-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+
+    .note-card h3 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 1.2em;
+    }
+
+    .note-card p {
+      color: #6c757d;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .note-card .meta {
+      font-size: 0.85em;
+      color: #adb5bd;
+      margin-bottom: 15px;
+    }
+
+    .note-card .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .note-card .btn {
+      padding: 8px 16px;
+      font-size: 0.9em;
+      margin: 0;
+    }
+
+    .sync-section {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    .sync-section h2 {
+      color: #856404;
+      margin-bottom: 15px;
+    }
+
+    .sync-section input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ffc107;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 1em;
+    }
+
+    .message {
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .message.success {
+      background: #d4edda;
+      border: 2px solid #28a745;
+      color: #155724;
+      display: block;
+    }
+
+    .message.error {
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+      color: #721c24;
+      display: block;
+    }
+
+    .message.info {
+      background: #d1ecf1;
+      border: 2px solid #17a2b8;
+      color: #0c5460;
+      display: block;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 1s ease-in-out infinite;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6c757d;
+    }
+
+    .empty-state h3 {
+      font-size: 1.5em;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📝 Electron Notes App</h1>
+      <p>SQLite Offline Storage with Backend Sync</p>
+    </div>
+
+    <div class="content">
+      <!-- Statistics -->
+      <div class="stats" id="stats">
+        <div class="stat-card">
+          <h3 id="stat-total">0</h3>
+          <p>Total Notes</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-pending">0</h3>
+          <p>Pending Sync</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-synced">0</h3>
+          <p>Synced</p>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="message" class="message"></div>
+
+      <!-- Add Note Form -->
+      <div class="form-section">
+        <h2>Add New Note</h2>
+        <form id="noteForm">
+          <div class="form-group">
+            <label for="noteTitle">Title</label>
+            <input type="text" id="noteTitle" required placeholder="Enter note title">
+          </div>
+          <div class="form-group">
+            <label for="noteContent">Content</label>
+            <textarea id="noteContent" placeholder="Enter note content"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Note</button>
+          <button type="button" class="btn btn-secondary" id="addBulkBtn">Add 10 Sample Notes (Bulk)</button>
+        </form>
+      </div>
+
+      <!-- Sync Section -->
+      <div class="sync-section">
+        <h2>🔄 Sync with Backend</h2>
+        <p style="margin-bottom: 15px; color: #856404;">
+          Sync your local notes with the NestJS + PostgreSQL backend API.
+          Enter your API URL below (default: http://localhost:3000)
+        </p>
+        <input type="text" id="apiUrl" placeholder="http://localhost:3000" value="http://localhost:3000">
+        <button class="btn btn-success" id="syncBtn">Sync Now</button>
+      </div>
+
+      <!-- Notes List -->
+      <div class="notes-section">
+        <h2>Your Notes</h2>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search notes by title or content...">
+        </div>
+        <div class="notes-grid" id="notesGrid">
+          <div class="empty-state">
+            <h3>No notes yet</h3>
+            <p>Create your first note above!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="./renderer.js"></script>
+</body>
 </html>

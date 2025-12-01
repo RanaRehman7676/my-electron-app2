@@ -58,3 +58,11 @@ jest-output/
 # Optional
 temp/
 tmp/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+user-data.db
+user-data.db-shm
+user-data.db-wal
